@@ -9,7 +9,7 @@ const URL = process.env.DB; // mongodb IP address and port number
 app.use(express.json());
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: "*",
   })
 );
 
