@@ -130,4 +130,4 @@ app.delete("/student/:id", async function (req, res) {
   }
 });
 
-app.listen(3001);
+app.listen(process.enc.PORT || 3001);
