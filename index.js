@@ -3,7 +3,8 @@ const app = express();
 const cors = require("cors");
 const mongodb = require("mongodb");
 const mongoClient = mongodb.MongoClient;
-const URL = "mongodb://localhost:27017"; // mongodb IP address and port number
+const dotenv = require("dotenv").config();
+const URL = process.env.DB; // mongodb IP address and port number
 
 app.use(express.json());
 app.use(
