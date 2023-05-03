@@ -108,7 +108,7 @@ app.get("/students", authenticate, async (req, res) => {
     const connection = await mongoClient.connect(URL);
 
     // Select the DB
-    const db = connection.db("expressDemo");
+    const db = connection.db("Studentdata");
 
     // Select the Collection and Insert the Data and Do the Operation
     let students = await db
@@ -132,7 +132,7 @@ app.post("/student", authenticate, async (req, res) => {
     const connection = await mongoClient.connect(URL); // the URL needs to be String value and this connect method will return the Promise object
 
     // Select the DB
-    const db = connection.db("expressDemo");
+    const db = connection.db("Studentdata");
 
     // Select the Collection and Insert the Data and Do the Operation
     req.body.userid = mongodb.ObjectId(req.userid);
@@ -156,7 +156,7 @@ app.get("/student/:id", authenticate, async function (req, res) {
     const connection = await mongoClient.connect(URL);
 
     // Select the DB
-    const db = connection.db("expressDemo");
+    const db = connection.db("Studentdata");
 
     // Select the Collection and Insert the Data and Do the Operation
     let student = await db
@@ -181,7 +181,7 @@ app.put("/student/:id", authenticate, async function (req, res) {
     const connection = await mongoClient.connect(URL);
 
     // Select the DB
-    const db = connection.db("expressDemo");
+    const db = connection.db("Studentdata");
 
     // Select the Collection and do the operation
     let student = await db
@@ -203,7 +203,7 @@ app.delete("/student/:id", authenticate, async function (req, res) {
     const connection = await mongoClient.connect(URL);
 
     // Select the DB
-    const db = connection.db("expressDemo");
+    const db = connection.db("Studentdata");
 
     // Select the Collection and do the operation
     let student = await db
