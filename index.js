@@ -5,7 +5,11 @@ const mongodb = require("mongodb");
 const mongoClient = mongodb.MongoClient;
 const dotenv = require("dotenv").config();
 const URL = process.env.DB; // mongodb IP address and port number
+const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const SECRET = process.env.SECRET;
 
+//Middleware
 app.use(express.json());
 app.use(
   cors({
@@ -15,8 +19,90 @@ app.use(
 
 let students = [];
 
+let authenticate = function (req, res, next) {
+  if (req.headers.authorization) {
+    try {
+      let verify = jwt.verify(req.headers.authorization, SECRET);
+      if (verify) {
+        req.userid = verify._id;
+        next();
+      } else {
+        res.status(401).json({ message: "Unauthorized" });
+      }
+    } catch (err) {
+      res.status(401).json({ message: "Unauthorized" });
+    }
+  } else {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};
+
+app.post("/register", async function (req, res) {
+  try {
+    // Open the Connection
+    const connection = await mongoClient.connect(URL);
+
+    // Select the DB
+    const db = connection.db("b35wd_tamil");
+
+    // Select the Collection
+    const salt = await bcryptjs.genSalt(10);
+    const hash = await bcryptjs.hash(req.body.password, salt);
+    req.body.password = hash;
+    await db.collection("users").insertOne(req.body);
+
+    // Close the connection
+    await connection.close();
+
+    res.json({
+      message: "Successfully Registered",
+    });
+  } catch (error) {
+    res.json({
+      message: "Error",
+    });
+  }
+});
+
+app.post("/login", async function (req, res) {
+  try {
+    // Open the Connection
+    const connection = await mongoClient.connect(URL);
+
+    // Select the DB
+    const db = connection.db("b35wd_tamil");
+
+    // Select the Collection
+    const user = await db
+      .collection("users")
+      .findOne({ username: req.body.username });
+
+    if (user) {
+      const match = await bcryptjs.compare(req.body.password, user.password);
+      if (match) {
+        // Token
+        const token = jwt.sign({ _id: user._id }, SECRET, { expiresIn: "1m" });
+        res.json({
+          message: "Successfully Logged In",
+          token,
+        });
+      } else {
+        res.status(401).json({
+          message: "Password is incorrect",
+        });
+      }
+    } else {
+      res.status(401).json({
+        message: "User not found",
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 // Route to get all students data from db
-app.get("/students", async (req, res) => {
+app.get("/students", authenticate, async (req, res) => {
   try {
     // Open and Establish the Connection
     const connection = await mongoClient.connect(URL);
@@ -25,7 +111,10 @@ app.get("/students", async (req, res) => {
     const db = connection.db("Studentdata");
 
     // Select the Collection and Insert the Data and Do the Operation
-    let students = await db.collection("students").find().toArray();
+    let students = await db
+      .collection("students")
+      .find({ userid: mongodb.ObjectId(req.userid) })
+      .toArray();
 
     // Close the connection - connection needs to be closed after the operation is complete otherwise the server overloads
     await connection.close();
@@ -37,7 +126,7 @@ app.get("/students", async (req, res) => {
 });
 
 // to add new student into the database
-app.post("/student", async (req, res) => {
+app.post("/student", authenticate, async (req, res) => {
   try {
     // Open and Establish the Connection
     const connection = await mongoClient.connect(URL); // the URL needs to be String value and this connect method will return the Promise object
@@ -46,6 +135,7 @@ app.post("/student", async (req, res) => {
     const db = connection.db("Studentdata");
 
     // Select the Collection and Insert the Data and Do the Operation
+    req.body.userid = mongodb.ObjectId(req.userid);
     await db.collection("students").insertOne(req.body);
 
     // Close the connection - connection needs to be closed after the operation is complete otherwise the server overloads
@@ -60,7 +150,7 @@ app.post("/student", async (req, res) => {
 });
 
 // to get the data of particular student using id
-app.get("/student/:id", async function (req, res) {
+app.get("/student/:id", authenticate, async function (req, res) {
   try {
     // Open and Establish the Connection
     const connection = await mongoClient.connect(URL);
@@ -83,7 +173,7 @@ app.get("/student/:id", async function (req, res) {
 });
 
 // to edit particular student data using the id
-app.put("/student/:id", async function (req, res) {
+app.put("/student/:id", authenticate, async function (req, res) {
   // Find the student with ID
 
   try {
@@ -107,7 +197,7 @@ app.put("/student/:id", async function (req, res) {
 });
 
 // to delete a student using id
-app.delete("/student/:id", async function (req, res) {
+app.delete("/student/:id", authenticate, async function (req, res) {
   try {
     // Open and Establish the Connection
     const connection = await mongoClient.connect(URL);
